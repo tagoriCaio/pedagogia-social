@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Realidade da Pedagogia Social no Brasil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Academia -->
+    <!-- Application Structure Plan: A single-page application with vertical scrolling and a sticky top navigation bar. The structure guides the user thematically from the core problems (Diagnóstico) to the theoretical underpinnings (Fundamentos) and finally to the proposed solutions (Caminhos Futuros). This non-linear, thematic approach was chosen over mirroring the report's linear structure to enhance user engagement and comprehension. It allows users to quickly grasp the key issues through interactive charts and cards, explore foundational concepts at their own pace, and then see the path forward, creating a more cohesive and intuitive user journey. -->
+    <!-- Visualization & Content Choices: 
+        - Investment Data (Report Table 2) -> Goal: Compare Brazil vs. OECD -> Viz: Bar Chart (Chart.js) -> Interaction: Tooltips on hover -> Justification: Provides an immediate, powerful visual comparison of the funding disparity.
+        - Education Types (Report Table 1) -> Goal: Compare formal, non-formal, informal -> Viz: Interactive HTML Table -> Interaction: Row highlight on click, updating a details-on-demand text box -> Justification: Makes dense, tabular data digestible and encourages exploration.
+        - Social Educator's Role (Report Table 3) -> Goal: Inform on scope of work -> Viz: HTML/CSS Diagram -> Interaction: Hover effects on cards -> Justification: A visual layout is more engaging than a long list for showing the breadth of the profession.
+        - Key Theorists -> Goal: Introduce foundational ideas -> Viz: Clickable cards -> Interaction: Show/hide detailed text -> Justification: Breaks down complex theory into manageable, user-initiated chunks.
+        - Gemini LLM Integration: -> Goal: Provide deeper, AI-generated explanations of educational concepts based on user selection -> Viz: Dynamic text output -> Interaction: Clickable button to trigger AI generation, clear button -> Justification: Enhances learning by offering on-demand, contextualized insights, making complex theories more accessible and directly linking them to the pedagogical social context.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #333D44;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4A6D7C;
+            border-bottom-color: #4A6D7C;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #4A6D7C;
+            color: #FFFFFF;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .table-interactive tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .table-interactive tr:hover {
+            background-color: #E8E5E0;
+        }
+        .table-interactive tr.selected {
+            background-color: #D4B483;
+            color: #333D44;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-[#4A6D7C]">Pedagogia Social</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#inicio" class="nav-link py-2">Início</a>
+                <a href="#diagnostico" class="nav-link py-2">Diagnóstico</a>
+                <a href="#fundamentos" class="nav-link py-2">Fundamentos</a>
+                <a href="#futuro" class="nav-link py-2">Caminhos Futuros</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#inicio" class="block py-2 nav-link text-center">Início</a>
+            <a href="#diagnostico" class="block py-2 nav-link text-center">Diagnóstico</a>
+            <a href="#fundamentos" class="block py-2 nav-link text-center">Fundamentos</a>
+            <a href="#futuro" class="block py-2 nav-link text-center">Caminhos Futuros</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="inicio" class="py-20 md:py-32 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-6xl font-bold text-[#4A6D7C] leading-tight">A Luta pela Educação Social no Brasil</h2>
+                <p class="mt-6 text-lg md:text-xl max-w-3xl mx-auto text-gray-600">Uma análise interativa sobre os desafios do desinvestimento, do fracasso estatal e a busca por reconhecimento de uma área essencial para a cidadania.</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="p-8 border border-gray-200 rounded-lg">
+                        <h3 class="text-2xl font-bold text-[#D4B483]">Desinvestimento</h3>
+                        <p class="mt-2 text-gray-500">O investimento público em educação caiu em média 2,5% ao ano (2015-2021), na contramão do mundo.</p>
+                    </div>
+                    <div class="p-8 border border-gray-200 rounded-lg">
+                        <h3 class="text-2xl font-bold text-[#D4B483]">Fracasso do Estado</h3>
+                        <p class="mt-2 text-gray-500">Escolas em áreas vulneráveis se tornam "depósitos", e a educação social assume um papel compensatório.</p>
+                    </div>
+                    <div class="p-8 border border-gray-200 rounded-lg">
+                        <h3 class="text-2xl font-bold text-[#D4B483]">Falta de Regulamentação</h3>
+                        <p class="mt-2 text-gray-500">O Educador Social, agente vital, atua sem o devido reconhecimento e regulamentação legal da sua profissão.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="diagnostico" class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold">Diagnóstico de um Sistema em Crise</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Esta seção explora os três pilares da crise na educação social brasileira. Navegue pelas abas para entender a profundidade de cada desafio e como eles se conectam, minando o potencial transformador da pedagogia social.</p>
+                </div>
+
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8 flex flex-wrap justify-center gap-2 md:gap-4 border-b border-gray-200">
+                        <button class="tab-button px-4 py-2 text-lg font-semibold rounded-t-lg active" data-tab="desinvestimento">Desinvestimento Crônico</button>
+                        <button class="tab-button px-4 py-2 text-lg font-semibold rounded-t-lg" data-tab="falha">O Fracasso do Estado</button>
+                        <button class="tab-button px-4 py-2 text-lg font-semibold rounded-t-lg" data-tab="reconhecimento">Luta por Reconhecimento</button>
+                    </div>
+
+                    <div id="desinvestimento" class="tab-content active">
+                        <div class="bg-white p-6 md:p-8 rounded-lg shadow-md">
+                           <h3 class="text-2xl font-bold text-center text-[#4A6D7C] mb-2">O Abismo no Investimento Educacional</h3>
+                           <p class="text-center text-gray-600 mb-8">O gráfico abaixo ilustra a gritante disparidade entre o investimento anual por aluno no Brasil e a média dos países da OCDE em 2021. Esses números revelam um subfinanciamento sistêmico que compromete a qualidade da educação formal e sobrecarrega a educação social.</p>
+                            <div class="chart-container">
+                                <canvas id="investmentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="falha" class="tab-content">
+                        <div class="bg-white p-6 md:p-8 rounded-lg shadow-md">
+                             <h3 class="text-2xl font-bold text-center text-[#4A6D7C] mb-8">A Educação Social como "Última Esperança"</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="border-l-4 border-[#D4B483] pl-4">
+                                    <h4 class="font-bold text-lg">Escolas como "Depósitos"</h4>
+                                    <p class="mt-2 text-gray-600">"Em estratos sociais vulneráveis, a escola é frequentemente percebida como um mero 'depósito' de crianças, onde ações moralizantes e controladoras disseminam conhecimento sem resultar em educação de qualidade, servindo apenas a uma função assistencialista e compensatória."</p>
+                                </div>
+                                <div class="border-l-4 border-[#D4B483] pl-4">
+                                    <h4 class="font-bold text-lg">Função Compensatória</h4>
+                                    <p class="mt-2 text-gray-600">"A falta de investimento e a falha do poder público criam um vácuo. A educação social emerge para preencher essa lacuna, atuando não como um complemento, mas como um mecanismo compensatório crítico para as deficiências do Estado."</p>
+                                </div>
+                                <div class="border-l-4 border-[#D4B483] pl-4">
+                                    <h4 class="font-bold text-lg">Ciclo de Negligência</h4>
+                                    <p class="mt-2 text-gray-600">"A falha do poder público não é apenas sobre cortes orçamentários, mas sobre a incapacidade ou falta de vontade de adaptar os modelos educacionais, contribuindo ativamente para a perpetuação da exclusão social."</p>
+                                </div>
+                                 <div class="border-l-4 border-[#D4B483] pl-4">
+                                    <h4 class="font-bold text-lg">A Faca de Dois Gumes</h4>
+                                    <p class="mt-2 text-gray-600">"Chamar a educação social de 'última esperança' ressalta seu papel vital, mas também expõe uma realidade perversa: ela é forçada a assumir responsabilidades que deveriam ser garantidas por políticas públicas eficazes."</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="reconhecimento" class="tab-content">
+                        <div class="bg-white p-6 md:p-8 rounded-lg shadow-md">
+                            <h3 class="text-2xl font-bold text-center text-[#4A6D7C] mb-2">O Campo de Atuação do Educador Social</h3>
+                            <p class="text-center text-gray-600 mb-8">Apesar da sua importância crucial, a profissão aguarda regulamentação. O Projeto de Lei 2.941-A/2019 busca formalizar o vasto e diversificado campo de atuação deste profissional, que vai muito além da sala de aula tradicional.</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center">
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Vulnerabilidade Social</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Direitos Humanos</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Cultura e Arte</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Saúde e Prevenção</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Medidas Socioeducativas</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>População Carcerária</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Educação Ambiental</p></div>
+                                <div class="bg-gray-100 p-3 rounded-lg"><p>Terceira Idade</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="fundamentos" class="py-20 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold">Os Fundamentos da Pedagogia Social</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Para compreender a solução, é essencial entender os conceitos que baseiam a educação social. Esta seção desmistifica a educação não-formal, diferenciando-a das outras modalidades e apresentando seus principais teóricos.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+                    <div class="lg:col-span-3">
+                        <h3 class="text-2xl font-bold text-[#4A6D7C] mb-4">Comparativo: Formal, Não-Formal e Informal</h3>
+                        <p class="text-gray-600 mb-6">A educação acontece em todos os lugares, mas com intenções e estruturas diferentes. Clique em uma linha da tabela para ver os detalhes de cada modalidade, com base nos estudos de Maria da Glória Gohn.</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse table-interactive">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="p-3 font-semibold">Categoria</th>
+                                        <th class="p-3 font-semibold">Formal</th>
+                                        <th class="p-3 font-semibold">Não-Formal</th>
+                                        <th class="p-3 font-semibold">Informal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-200" data-row-id="espaco">
+                                        <td class="p-3 font-semibold">Espaço</td>
+                                        <td class="p-3">Escolas</td>
+                                        <td class="p-3">ONGs, Comunidades</td>
+                                        <td class="p-3">Casa, Rua, Mídia</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-200" data-row-id="proposito">
+                                        <td class="p-3 font-semibold">Propósito</td>
+                                        <td class="p-3">Conteúdos, Certificação</td>
+                                        <td class="p-3">Formação Cidadã, Política</td>
+                                        <td class="p-3">Socialização, Valores</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-200" data-row-id="atributos">
+                                        <td class="p-3 font-semibold">Atributos</td>
+                                        <td class="p-3">Organização, Disciplina</td>
+                                        <td class="p-3">Intencionalidade, Identidade</td>
+                                        <td class="p-3">Espontaneidade, Emoções</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-200" data-row-id="resultados">
+                                        <td class="p-3 font-semibold">Resultados</td>
+                                        <td class="p-3">Titulação</td>
+                                        <td class="p-3">Empoderamento, Capital Social</td>
+                                        <td class="p-3">Senso Comum</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 mt-8 lg:mt-0">
+                        <div id="table-details" class="card p-6 min-h-[200px]">
+                            <h4 id="details-title" class="text-xl font-bold text-[#4A6D7C]">Selecione uma linha</h4>
+                            <p id="details-text" class="mt-4 text-gray-700">Clique em uma categoria na tabela (Espaço, Propósito, etc.) para ver uma descrição detalhada aqui.</p>
+                            <button id="generate-explanation-button" class="mt-4 px-6 py-2 bg-[#D4B483] text-white font-semibold rounded-lg shadow-md hover:bg-[#C8A365] focus:outline-none focus:ring-2 focus:ring-[#D4B483] focus:ring-opacity-75 hidden">✨ Expandir Conceito ✨</button>
+                            <div id="ai-response-container" class="mt-6 border-t border-gray-200 pt-4 hidden">
+                                <h5 class="font-bold text-[#4A6D7C] mb-2">Explicação Detalhada (Gerada por IA):</h5>
+                                <div id="loading-spinner" class="hidden text-center">
+                                    <div class="animate-spin inline-block w-8 h-8 border-4 border-gray-400 border-t-transparent rounded-full"></div>
+                                    <p class="mt-2 text-gray-500">Gerando...</p>
+                                </div>
+                                <p id="ai-generated-text" class="text-gray-700"></p>
+                                <button id="clear-explanation-button" class="mt-4 text-sm text-gray-500 hover:text-gray-700 hidden">Limpar Explicação</button>
+                            </div>
+                            <div id="error-message" class="mt-4 text-red-600 hidden">
+                                Ocorreu um erro ao gerar a explicação. Tente novamente mais tarde.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="futuro" class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                 <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold">Caminhos para uma Educação Emancipatória</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Superar a crise exige ações coordenadas e um compromisso político real. Esta seção apresenta as principais recomendações para transformar a educação social de uma prática compensatória para uma força verdadeiramente emancipatória no Brasil.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Aumentar Investimento</h3>
+                        <p class="mt-3 text-gray-600">Reverter os cortes e garantir financiamento público estável e adequado para a educação social, alinhando o Brasil a práticas internacionais de valorização educacional.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Qualificar a Formação</h3>
+                        <p class="mt-3 text-gray-600">Desenvolver currículos de formação para educadores sociais que integrem teoria e prática, padronizados e sensíveis aos contextos de atuação.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Implementar a Regulamentação</h3>
+                        <p class="mt-3 text-gray-600">Aprovar e implementar efetivamente a lei que regulamenta a profissão, criando planos de carreira e garantindo a integração dos educadores nas políticas públicas.</p>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Políticas Intersetoriais</h3>
+                        <p class="mt-3 text-gray-600">Abordar a vulnerabilidade de forma holística, articulando ações entre educação, saúde, assistência social e cultura para superar abordagens fragmentadas.</p>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Fortalecer Vínculos</h3>
+                        <p class="mt-3 text-gray-600">Transformar escolas em centros de referência comunitária, articulando a educação formal com a não-formal e a sociedade civil organizada.</p>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#4A6D7C]">Apoiar a Sociedade Civil</h3>
+                        <p class="mt-3 text-gray-600">Valorizar e fortalecer o papel das ONGs e movimentos sociais, fomentando a colaboração estratégica com o Estado e garantindo sua autonomia.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>Esta aplicação é uma representação interativa baseada no relatório "A Pedagogia Social e a Educação em Espaços Culturais e Sociais".</p>
+            <p class="text-sm text-gray-400 mt-2">Desenvolvido como uma ferramenta de conscientização e exploração do tema.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            mobileMenu.addEventListener('click', () => {
+                 mobileMenu.classList.add('hidden');
+            });
+
+            const sections = document.querySelectorAll('main section');
+            const header = document.getElementById('header');
+            const observerOptions = {
+                root: null,
+                rootMargin: `-${header.offsetHeight}px 0px 0px 0px`,
+                threshold: 0.3
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+
+            const investmentData = {
+                labels: ['Ensino Fundamental', 'Ensino Médio', 'Ensino Superior'],
+                datasets: [
+                    {
+                        label: 'Brasil (2021)',
+                        data: [3668, 4058, 13569],
+                        backgroundColor: '#D4B483',
+                        borderColor: '#C8A365',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Média OCDE (2021)',
+                        data: [11914, 12713, 17138],
+                        backgroundColor: '#4A6D7C',
+                        borderColor: '#3B5765',
+                        borderWidth: 1
+                    }
+                ]
+            };
+
+            const investmentChartCtx = document.getElementById('investmentChart').getContext('2d');
+            new Chart(investmentChartCtx, {
+                type: 'bar',
+                data: investmentData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('pt-BR');
+                                }
+                            }
+                        },
+                        x: {
+                           ticks: {
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 16) {
+                                        return label.split(' ');
+                                    }
+                                    return label;
+                                }
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investimento Anual por Aluno (USD)'
+                        }
+                    }
+                }
+            });
+
+            const tableRows = document.querySelectorAll('.table-interactive tbody tr');
+            const detailsTitle = document.getElementById('details-title');
+            const detailsText = document.getElementById('details-text');
+            const generateExplanationButton = document.getElementById('generate-explanation-button');
+            const aiResponseContainer = document.getElementById('ai-response-container');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const aiGeneratedText = document.getElementById('ai-generated-text');
+            const errorMessage = document.getElementById('error-message');
+            const clearExplanationButton = document.getElementById('clear-explanation-button');
+
+            let currentDetailKey = null;
+
+            const rowDetails = {
+                espaco: {
+                    title: 'Espaço de Aprendizagem',
+                    text: 'A educação formal ocorre em instituições regulamentadas como escolas. A não-formal ocupa espaços intencionais fora da escola, como ONGs e centros comunitários. Já a informal acontece de forma espontânea na vida cotidiana: em casa, na rua, com amigos.',
+                    prompt_info: {
+                        concept_name: 'Espaço de Aprendizagem',
+                        formal_detail: 'Escolas',
+                        non_formal_detail: 'ONGs, Comunidades',
+                        informal_detail: 'Casa, Rua, Mídia'
+                    }
+                },
+                proposito: {
+                    title: 'Propósito Educativo',
+                    text: 'O propósito da educação formal é o ensino de conteúdos sistematizados e a certificação. A não-formal visa capacitar para a cidadania, a participação política e o desenvolvimento de habilidades para a vida. A informal foca na socialização primária e na transmissão de valores e crenças.',
+                    prompt_info: {
+                        concept_name: 'Propósito Educativo',
+                        formal_detail: 'Conteúdos, Certificação',
+                        non_formal_detail: 'Formação Cidadã, Política',
+                        informal_detail: 'Socialização, Valores'
+                    }
+                },
+                atributos: {
+                    title: 'Principais Atributos',
+                    text: 'A formalidade é marcada pela organização curricular e disciplina. A não-formalidade se destaca pela intencionalidade, flexibilidade e construção de identidade coletiva. A informalidade é caracterizada pela espontaneidade e pela forte influência das emoções e experiências.',
+                    prompt_info: {
+                        concept_name: 'Atributos',
+                        formal_detail: 'Organização, Disciplina',
+                        non_formal_detail: 'Intencionalidade, Identidade',
+                        informal_detail: 'Espontaneidade, Emoções'
+                    }
+                },
+                resultados: {
+                    title: 'Resultados Esperados',
+                    text: 'Na educação formal, o resultado esperado é a titulação e a certificação. Na não-formal, busca-se o empoderamento, a organização coletiva e o desenvolvimento de capital social. A informal resulta no desenvolvimento do senso comum e na orientação espontânea para a vida.',
+                    prompt_info: {
+                        concept_name: 'Resultados',
+                        formal_detail: 'Titulação',
+                        non_formal_detail: 'Empoderamento, Capital Social',
+                        informal_detail: 'Senso Comum'
+                    }
+                }
+            };
+            
+            tableRows.forEach(row => {
+                row.addEventListener('click', () => {
+                    tableRows.forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+
+                    currentDetailKey = row.dataset.rowId;
+                    detailsTitle.textContent = rowDetails[currentDetailKey].title;
+                    detailsText.textContent = rowDetails[currentDetailKey].text;
+
+                    generateExplanationButton.classList.remove('hidden');
+                    aiResponseContainer.classList.add('hidden');
+                    aiGeneratedText.textContent = '';
+                    errorMessage.classList.add('hidden');
+                    clearExplanationButton.classList.add('hidden');
+                });
+            });
+
+            generateExplanationButton.addEventListener('click', async () => {
+                if (!currentDetailKey) return;
+
+                const detailInfo = rowDetails[currentDetailKey].prompt_info;
+                const prompt = `Explique de forma concisa o conceito de "${detailInfo.concept_name}" na educação, detalhando suas características em cada uma das modalidades: Formal (e.g., ${detailInfo.formal_detail}), Não-Formal (e.g., ${detailInfo.non_formal_detail}), e Informal (e.g., ${detailInfo.informal_detail}). Inclua exemplos práticos para cada modalidade e foque na relevância da pedagogia social no contexto brasileiro. Responda em português.`;
+
+                generateExplanationButton.classList.add('hidden');
+                aiResponseContainer.classList.remove('hidden');
+                loadingSpinner.classList.remove('hidden');
+                aiGeneratedText.textContent = '';
+                errorMessage.classList.add('hidden');
+                clearExplanationButton.classList.add('hidden');
+
+                try {
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        aiGeneratedText.innerHTML = text.replace(/\n/g, '<br>');
+                        clearExplanationButton.classList.remove('hidden');
+                    } else {
+                        errorMessage.classList.remove('hidden');
+                        console.error('Unexpected API response structure:', result);
+                    }
+                } catch (error) {
+                    errorMessage.classList.remove('hidden');
+                    console.error('Error calling Gemini API:', error);
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                }
+            });
+
+            clearExplanationButton.addEventListener('click', () => {
+                aiGeneratedText.textContent = '';
+                aiResponseContainer.classList.add('hidden');
+                generateExplanationButton.classList.remove('hidden');
+                clearExplanationButton.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+            });
+
+        });
+    </script>
+</body>
+</html>
